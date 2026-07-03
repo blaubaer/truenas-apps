@@ -5,19 +5,13 @@ resources:
 
 restic_manager:
   truenas_api_url: https://host.docker.internal
-  truenas_skip_tls_check: true
-  upstream_trusted_address: ""
-  tls_insecure: "on"
-  log:
-    level: info
-    color: false
-    format: text
+  upstream_trusted_address: []
   additional_envs: []
 
 network:
   web_port:
     bind_mode: published
-    port_number: 9080
+    port_number: 30446
 
 ix_volumes:
   data: /opt/tests/mnt/restic-manager/data

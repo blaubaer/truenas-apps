@@ -1,12 +1,10 @@
 images:
   image:
     repository: codeberg.org/echocat/truenas-restic-manager
-    tag: v0.2.0
+    tag: v0.2.1
 
 consts:
   restic_manager_container_name: restic-manager
   app_id: restic-manager
-  app_mounts_property: storage.dataset_mounts
   api_user: restic-manager
   api_key_name: restic-manager
-  internal_web_port: 9080

@@ -39,82 +39,21 @@ questions:
             type: string
             default: https://host.docker.internal
             required: true
-        - variable: truenas_skip_tls_check
-          label: Skip TrueNAS TLS Verification
-          description: |
-            Keep this enabled when TrueNAS uses its default self-signed certificate.</br>
-            Disable it only when your TrueNAS API uses a certificate trusted by the container.
-          schema:
-            type: boolean
-            default: true
-        - variable: tls_insecure
-          label: Plain HTTP Handling
-          description: |
-            Controls plain HTTP behavior on the same app port.</br>
-            on: HTTP and HTTPS are both accepted.</br>
-            redirect: HTTP redirects to HTTPS.</br>
-            off: HTTP is rejected.
-          schema:
-            type: string
-            default: "on"
-            required: true
-            enum:
-              - value: "on"
-                description: Accept HTTP and HTTPS on the same port
-              - value: "redirect"
-                description: Redirect HTTP to HTTPS
-              - value: "off"
-                description: Reject HTTP
         - variable: upstream_trusted_address
           label: Trusted Upstream Addresses
           description: |
-            Optional comma-separated IP/CIDR ranges of trusted reverse proxies.</br>
+            Optional IP/CIDR ranges of trusted reverse proxies.</br>
             When set, Restic Manager trusts `X-Forwarded-Prefix` and `X-Forwarded-For` from these addresses.</br>
-            Example: `127.0.0.0/8,::1/128,172.16.0.0/16`
+            Example: `172.16.0.0/16`
           schema:
-            type: string
-            default: ""
-        - variable: log
-          label: Logging
-          schema:
-            type: dict
-            attrs:
-              - variable: level
-                label: Log Level
+            type: list
+            default: []
+            items:
+              - variable: address
+                label: Address
                 schema:
                   type: string
-                  default: info
                   required: true
-                  enum:
-                    - value: trace
-                      description: trace
-                    - value: debug
-                      description: debug
-                    - value: info
-                      description: info
-                    - value: warn
-                      description: warn
-                    - value: error
-                      description: error
-                    - value: fatal
-                      description: fatal
-              - variable: color
-                label: Log Color
-                description: Colored logs can cause display issues in the TrueNAS app log UI.
-                schema:
-                  type: boolean
-                  default: false
-              - variable: format
-                label: Log Format
-                schema:
-                  type: string
-                  default: text
-                  required: true
-                  enum:
-                    - value: text
-                      description: Text
-                    - value: json
-                      description: JSON
         - variable: additional_envs
           label: Additional Environment Variables
           schema:
@@ -168,7 +107,7 @@ questions:
                 label: Port Number
                 schema:
                   type: int
-                  default: 9080
+                  default: 30446
                   min: 1
                   max: 65535
                   required: true
@@ -366,7 +305,7 @@ questions:
           label: Dataset Mounts
           description: |
             Dataset host-path mounts used by Restic Manager.</br>
-            These entries are normally managed from inside Restic Manager during pairing/setup and should not be edited manually in the TrueNAS app configuration.</br>
+            Restic Manager uses these entries to verify that selected backup source datasets are mounted for snapshot-based backups.</br>
             Entries are rendered read-only and with `rslave` bind propagation.
           schema:
             type: list

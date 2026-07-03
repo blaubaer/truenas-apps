@@ -1,4 +1,4 @@
-app_version: 0.2.0
+app_version: 0.2.1
 capabilities: []
 categories:
 - backup
@@ -31,4 +31,4 @@ sources:
 - https://codeberg.org/echocat/truenas-restic-manager
 title: TrueNAS Restic Manager
 train: community
-version: 0.2.0
+version: 0.2.1

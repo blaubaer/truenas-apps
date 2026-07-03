@@ -7,26 +7,21 @@
 {% do c1.add_extra_host("host.docker.internal", "host-gateway") %}
 
 {% do c1.environment.add_env("TRM_TRUENAS_API_URL", values.restic_manager.truenas_api_url) %}
-{% do c1.environment.add_env("TRM_TRUENAS_SKIP_TLS_CHECK", values.restic_manager.truenas_skip_tls_check) %}
-{% do c1.environment.add_env("TRM_LISTEN", ":%d" | format(values.consts.internal_web_port)) %}
-{% do c1.environment.add_env("TRM_TLS_INSECURE", values.restic_manager.tls_insecure) %}
+{% do c1.environment.add_env("TRM_LISTEN", ":%d" | format(values.network.web_port.port_number)) %}
 {% if values.restic_manager.upstream_trusted_address %}
-  {% do c1.environment.add_env("TRM_UPSTREAM_TRUSTED_ADDRESS", values.restic_manager.upstream_trusted_address) %}
+  {% do c1.environment.add_env("TRM_UPSTREAM_TRUSTED_ADDRESS", values.restic_manager.upstream_trusted_address | join(",")) %}
 {% endif %}
-{% do c1.environment.add_env("TRM_LOG_LEVEL", values.restic_manager.log.level) %}
-{% do c1.environment.add_env("TRM_LOG_COLOR", values.restic_manager.log.color) %}
-{% do c1.environment.add_env("TRM_LOG_FORMAT", values.restic_manager.log.format) %}
 {% do c1.environment.add_env("TRM_API_USER", values.consts.api_user) %}
 {% do c1.environment.add_env("TRM_APP_ID", values.consts.app_id) %}
 {% do c1.environment.add_env("TRM_API_KEY_NAME", values.consts.api_key_name) %}
-{% do c1.environment.add_env("TRM_APP_MOUNTS_PROPERTY", values.consts.app_mounts_property) %}
+{% do c1.environment.add_env("TRM_APP_MOUNTS_PROPERTY", "storage.dataset_mounts") %}
 {% do c1.environment.add_env("TRM_STORE_MIGRATE_ON_START", true) %}
 {% do c1.environment.add_env("TRM_WORKDIR", "/work") %}
 {% do c1.environment.add_env("TRM_STORE_PATH", "/data/store.db") %}
 {% do c1.environment.add_env("RESTIC_CACHE_DIR", "/cache") %}
 {% do c1.environment.add_user_envs(values.restic_manager.additional_envs) %}
 
-{% do c1.add_port(values.network.web_port, {"container_port": values.consts.internal_web_port}) %}
+{% do c1.add_port(values.network.web_port) %}
 
 {% do c1.add_storage("/data", values.storage.data) %}
 {% do c1.add_storage("/cache", values.storage.cache) %}
