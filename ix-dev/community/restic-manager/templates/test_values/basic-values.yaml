@@ -1,0 +1,41 @@
+resources:
+  limits:
+    cpus: 2.0
+    memory: 4096
+
+restic_manager:
+  truenas_api_url: https://host.docker.internal
+  truenas_skip_tls_check: true
+  upstream_trusted_address: ""
+  tls_insecure: "on"
+  log:
+    level: info
+    color: false
+    format: text
+  additional_envs: []
+
+network:
+  web_port:
+    bind_mode: published
+    port_number: 9080
+
+ix_volumes:
+  data: /opt/tests/mnt/restic-manager/data
+  cache: /opt/tests/mnt/restic-manager/cache
+
+storage:
+  data:
+    type: ix_volume
+    ix_volume_config:
+      dataset_name: data
+      create_host_path: true
+  cache:
+    type: ix_volume
+    ix_volume_config:
+      dataset_name: cache
+      create_host_path: true
+  work:
+    type: tmpfs
+    tmpfs_config:
+      size: 256
+  dataset_mounts: []

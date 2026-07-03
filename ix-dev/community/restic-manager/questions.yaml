@@ -1,0 +1,477 @@
+groups:
+  - name: Restic Manager Configuration
+    description: Configure TrueNAS Restic Manager
+  - name: Network Configuration
+    description: Configure Network for TrueNAS Restic Manager
+  - name: Storage Configuration
+    description: Configure Storage for TrueNAS Restic Manager
+  - name: Labels Configuration
+    description: Configure Labels for TrueNAS Restic Manager
+  - name: Resources Configuration
+    description: Configure Resources for TrueNAS Restic Manager
+
+questions:
+  - variable: TZ
+    group: Restic Manager Configuration
+    label: Timezone
+    schema:
+      type: string
+      default: Etc/UTC
+      required: true
+      $ref:
+        - definitions/timezone
+  - variable: restic_manager
+    label: ""
+    group: Restic Manager Configuration
+    schema:
+      type: dict
+      attrs:
+        - variable: truenas_api_url
+          label: TrueNAS API URL
+          description: |
+            URL used by Restic Manager to reach the TrueNAS API.</br>
+            Sign in to Restic Manager with your own TrueNAS user credentials. Currently, the TrueNAS user must have the `Full Admin` role for pairing and management operations.</br>
+            The default `https://host.docker.internal` works when TrueNAS listens on the default HTTPS port.</br>
+            If TrueNAS listens on another port, include it, for example `https://host.docker.internal:1234`.</br>
+            If TrueNAS only listens on selected interfaces, use the reachable host or IP instead, for example `https://192.168.1.2:1234`.</br>
+            This app always binds `host.docker.internal:host-gateway` for the container.
+          schema:
+            type: string
+            default: https://host.docker.internal
+            required: true
+        - variable: truenas_skip_tls_check
+          label: Skip TrueNAS TLS Verification
+          description: |
+            Keep this enabled when TrueNAS uses its default self-signed certificate.</br>
+            Disable it only when your TrueNAS API uses a certificate trusted by the container.
+          schema:
+            type: boolean
+            default: true
+        - variable: tls_insecure
+          label: Plain HTTP Handling
+          description: |
+            Controls plain HTTP behavior on the same app port.</br>
+            on: HTTP and HTTPS are both accepted.</br>
+            redirect: HTTP redirects to HTTPS.</br>
+            off: HTTP is rejected.
+          schema:
+            type: string
+            default: "on"
+            required: true
+            enum:
+              - value: "on"
+                description: Accept HTTP and HTTPS on the same port
+              - value: "redirect"
+                description: Redirect HTTP to HTTPS
+              - value: "off"
+                description: Reject HTTP
+        - variable: upstream_trusted_address
+          label: Trusted Upstream Addresses
+          description: |
+            Optional comma-separated IP/CIDR ranges of trusted reverse proxies.</br>
+            When set, Restic Manager trusts `X-Forwarded-Prefix` and `X-Forwarded-For` from these addresses.</br>
+            Example: `127.0.0.0/8,::1/128,172.16.0.0/16`
+          schema:
+            type: string
+            default: ""
+        - variable: log
+          label: Logging
+          schema:
+            type: dict
+            attrs:
+              - variable: level
+                label: Log Level
+                schema:
+                  type: string
+                  default: info
+                  required: true
+                  enum:
+                    - value: trace
+                      description: trace
+                    - value: debug
+                      description: debug
+                    - value: info
+                      description: info
+                    - value: warn
+                      description: warn
+                    - value: error
+                      description: error
+                    - value: fatal
+                      description: fatal
+              - variable: color
+                label: Log Color
+                description: Colored logs can cause display issues in the TrueNAS app log UI.
+                schema:
+                  type: boolean
+                  default: false
+              - variable: format
+                label: Log Format
+                schema:
+                  type: string
+                  default: text
+                  required: true
+                  enum:
+                    - value: text
+                      description: Text
+                    - value: json
+                      description: JSON
+        - variable: additional_envs
+          label: Additional Environment Variables
+          schema:
+            type: list
+            default: []
+            items:
+              - variable: env
+                label: Environment Variable
+                schema:
+                  type: dict
+                  attrs:
+                    - variable: name
+                      label: Name
+                      schema:
+                        type: string
+                        required: true
+                    - variable: value
+                      label: Value
+                      schema:
+                        type: string
+
+  - variable: network
+    label: ""
+    group: Network Configuration
+    schema:
+      type: dict
+      attrs:
+        - variable: web_port
+          label: WebUI Port
+          schema:
+            type: dict
+            attrs:
+              - variable: bind_mode
+                label: Port Bind Mode
+                description: |
+                  The port bind mode.</br>
+                  - Publish: The port will be published on the host for external access.</br>
+                  - Expose: The port will be exposed for inter-container communication.</br>
+                  - None: The port will not be exposed or published.
+                schema:
+                  type: string
+                  default: "published"
+                  enum:
+                    - value: "published"
+                      description: Publish port on the host for external access
+                    - value: "exposed"
+                      description: Expose port for inter-container communication
+                    - value: ""
+                      description: None
+              - variable: port_number
+                label: Port Number
+                schema:
+                  type: int
+                  default: 9080
+                  min: 1
+                  max: 65535
+                  required: true
+              - variable: host_ips
+                label: Host IPs
+                description: IPs on the host to bind this port
+                schema:
+                  type: list
+                  show_if: [["bind_mode", "=", "published"]]
+                  default: []
+                  items:
+                    - variable: host_ip
+                      label: Host IP
+                      schema:
+                        type: string
+                        required: true
+                        $ref:
+                          - definitions/node_bind_ip
+
+  - variable: storage
+    label: ""
+    group: Storage Configuration
+    schema:
+      type: dict
+      attrs:
+        - variable: data
+          label: Data Storage
+          description: Stores the Restic Manager database at `/data/store.db`. This storage contains sensitive data and must not be deleted.
+          schema:
+            type: dict
+            attrs:
+              - variable: type
+                label: Type
+                description: |
+                  ixVolume: Is dataset created automatically by the system.</br>
+                  Host Path: Is a path that already exists on the system.
+                schema:
+                  type: string
+                  required: true
+                  default: "ix_volume"
+                  enum:
+                    - value: "host_path"
+                      description: Host Path (Path that already exists on the system)
+                    - value: "ix_volume"
+                      description: ixVolume (Dataset created automatically by the system)
+              - variable: ix_volume_config
+                label: ixVolume Configuration
+                schema:
+                  type: dict
+                  show_if: [["type", "=", "ix_volume"]]
+                  $ref:
+                    - "normalize/ix_volume"
+                  attrs:
+                    - variable: acl_enable
+                      label: Enable ACL
+                      schema:
+                        type: boolean
+                        default: false
+                    - variable: dataset_name
+                      label: Dataset Name
+                      schema:
+                        type: string
+                        required: true
+                        hidden: true
+                        default: "data"
+                    - variable: acl_entries
+                      label: ACL Configuration
+                      schema:
+                        type: dict
+                        show_if: [["acl_enable", "=", true]]
+                        attrs: []
+              - variable: host_path_config
+                label: Host Path Configuration
+                schema:
+                  type: dict
+                  show_if: [["type", "=", "host_path"]]
+                  attrs:
+                    - variable: acl_enable
+                      label: Enable ACL
+                      schema:
+                        type: boolean
+                        default: false
+                    - variable: acl
+                      label: ACL Configuration
+                      schema:
+                        type: dict
+                        show_if: [["acl_enable", "=", true]]
+                        attrs: []
+                        $ref:
+                          - "normalize/acl"
+                    - variable: path
+                      label: Host Path
+                      schema:
+                        type: hostpath
+                        show_if: [["acl_enable", "=", false]]
+                        required: true
+        - variable: cache
+          label: Cache Storage
+          description: Stores the restic cache at `/cache`. This storage contains sensitive cache data but can be rebuilt if lost.
+          schema:
+            type: dict
+            attrs:
+              - variable: type
+                label: Type
+                description: |
+                  ixVolume: Is dataset created automatically by the system.</br>
+                  Host Path: Is a path that already exists on the system.
+                schema:
+                  type: string
+                  required: true
+                  default: "ix_volume"
+                  enum:
+                    - value: "host_path"
+                      description: Host Path (Path that already exists on the system)
+                    - value: "ix_volume"
+                      description: ixVolume (Dataset created automatically by the system)
+              - variable: ix_volume_config
+                label: ixVolume Configuration
+                schema:
+                  type: dict
+                  show_if: [["type", "=", "ix_volume"]]
+                  $ref:
+                    - "normalize/ix_volume"
+                  attrs:
+                    - variable: acl_enable
+                      label: Enable ACL
+                      schema:
+                        type: boolean
+                        default: false
+                    - variable: dataset_name
+                      label: Dataset Name
+                      schema:
+                        type: string
+                        required: true
+                        hidden: true
+                        default: "cache"
+                    - variable: acl_entries
+                      label: ACL Configuration
+                      schema:
+                        type: dict
+                        show_if: [["acl_enable", "=", true]]
+                        attrs: []
+              - variable: host_path_config
+                label: Host Path Configuration
+                schema:
+                  type: dict
+                  show_if: [["type", "=", "host_path"]]
+                  attrs:
+                    - variable: acl_enable
+                      label: Enable ACL
+                      schema:
+                        type: boolean
+                        default: false
+                    - variable: acl
+                      label: ACL Configuration
+                      schema:
+                        type: dict
+                        show_if: [["acl_enable", "=", true]]
+                        attrs: []
+                        $ref:
+                          - "normalize/acl"
+                    - variable: path
+                      label: Host Path
+                      schema:
+                        type: hostpath
+                        show_if: [["acl_enable", "=", false]]
+                        required: true
+        - variable: work
+          label: Work Storage
+          description: Temporary in-memory working directory at `/work`. It can contain sensitive data while jobs are prepared.
+          schema:
+            type: dict
+            attrs:
+              - variable: type
+                label: Type
+                schema:
+                  type: string
+                  required: true
+                  default: "tmpfs"
+                  enum:
+                    - value: "tmpfs"
+                      description: tmpfs (Temporary directory created in RAM)
+              - variable: tmpfs_config
+                label: tmpfs Configuration
+                schema:
+                  type: dict
+                  attrs:
+                    - variable: size
+                      label: Tmpfs Size Limit (MiB)
+                      schema:
+                        type: int
+                        default: 256
+                        required: true
+        - variable: dataset_mounts
+          label: Dataset Mounts
+          description: |
+            Dataset host-path mounts used by Restic Manager.</br>
+            These entries are normally managed from inside Restic Manager during pairing/setup and should not be edited manually in the TrueNAS app configuration.</br>
+            Entries are rendered read-only and with `rslave` bind propagation.
+          schema:
+            type: list
+            default: []
+            items:
+              - variable: dataset_mount
+                label: Dataset Mount
+                schema:
+                  type: dict
+                  attrs:
+                    - variable: type
+                      label: Type
+                      schema:
+                        type: string
+                        required: true
+                        default: "host_path"
+                        enum:
+                          - value: "host_path"
+                            description: Host Path
+                    - variable: read_only
+                      label: Read Only
+                      schema:
+                        type: boolean
+                        default: true
+                        hidden: true
+                    - variable: mount_path
+                      label: Mount Path
+                      schema:
+                        type: path
+                        required: true
+                    - variable: host_path_config
+                      label: Host Path Configuration
+                      schema:
+                        type: dict
+                        attrs:
+                          - variable: acl_enable
+                            label: Enable ACL
+                            schema:
+                              type: boolean
+                              default: false
+                              hidden: true
+                          - variable: path
+                            label: Host Path
+                            schema:
+                              type: hostpath
+                              required: true
+
+  - variable: labels
+    label: ""
+    group: Labels Configuration
+    schema:
+      type: list
+      default: []
+      items:
+        - variable: label
+          label: Label
+          schema:
+            type: dict
+            attrs:
+              - variable: key
+                label: Key
+                schema:
+                  type: string
+                  required: true
+              - variable: value
+                label: Value
+                schema:
+                  type: string
+                  required: true
+              - variable: containers
+                label: Containers
+                description: Containers where the label should be applied
+                schema:
+                  type: list
+                  items:
+                    - variable: container
+                      label: Container
+                      schema:
+                        type: string
+                        required: true
+                        enum:
+                          - value: restic-manager
+                            description: restic-manager
+  - variable: resources
+    label: ""
+    group: Resources Configuration
+    schema:
+      type: dict
+      attrs:
+        - variable: limits
+          label: Limits
+          schema:
+            type: dict
+            attrs:
+              - variable: cpus
+                label: CPUs
+                description: CPUs limit for TrueNAS Restic Manager.
+                schema:
+                  type: int
+                  default: 2
+                  required: true
+              - variable: memory
+                label: Memory (in MB)
+                description: Memory limit for TrueNAS Restic Manager.
+                schema:
+                  type: int
+                  default: 4096
+                  required: true
